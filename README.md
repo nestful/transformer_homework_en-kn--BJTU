@@ -3,7 +3,7 @@
 本项目从零开始使用 PyTorch 实现了一个完整的 Encoder-Decoder Transformer 模型，用于英语到卡纳达语的机器翻译任务。
 
 ## 项目结构
-
+```text
 ├── .gitignore # Git忽略文件配置
 ├── data/ # 存放数据集的目录
 ├── results/
@@ -16,7 +16,7 @@
 │ └── predict.py # 预测/翻译脚本
 ├── README.md # 本说明文件
 └── requirements.txt # Python环境依赖
-
+```
 ## 环境设置
 
 建议使用 Conda 创建虚拟环境，并确保你的机器拥有支持 CUDA 的 NVIDIA GPU。
