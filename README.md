@@ -86,5 +86,6 @@ python src/predict.py
 ## 实验结果
 
 模型的训练和验证损失曲线如下所示。可以看出，模型在训练集上有效学习，但在验证集上出现了过拟合现象。
+<img width="629" height="399" alt="image" src="https://github.com/user-attachments/assets/2fa42d0b-74d3-4946-bf75-ab218a63e534" />
 
-![image-20251026182323036](README.assets/image-20251026182323036.png)
+
