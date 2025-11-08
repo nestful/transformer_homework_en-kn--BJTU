@@ -1,91 +1,103 @@
-# 基于Transformer架构的英-卡纳达语翻译
+# 从零实现Transformer: 英-卡纳达语机器翻译
 
-本项目从零开始使用 PyTorch 实现了一个完整的 Encoder-Decoder Transformer 模型，用于英语到卡纳达语的机器翻译任务。
+本项目是 Vaswani et al. (2017) 论文《Attention Is All You Need》中 Transformer 模型的完整 PyTorch 实现。该模型在一个公开的英语-卡纳达语平行语料库上进行了训练，用于完成一个简单的机器翻译任务。
+
+项目的核心不仅在于实现了一个标准的 Encoder-Decoder Transformer，还包含了一系列详细的**消融实验**，以系统性地分析模型中各个关键组件（如层数、注意力头数、位置编码等）对最终性能的影响。
 
 ## 项目结构
+
 ```text
-├── .gitignore # Git忽略文件配置
-├── data/ # 存放数据集的目录
+.
+├── .gitignore          # Git忽略文件配置
+├── data.zip            # 压缩的数据集 (需要解压)
+├── data/               # 存放解压后的数据集 (train/, validation/, test/)
 ├── results/
-│ └── loss_curve.png # 训练损失曲线图
+│   ├── loss_curve_baseline.png
+│   ├── loss_curve_fewer_heads_h2.png
+│   ├── loss_curve_fewer_layers_N3.png
+│   ├── loss_curve_no_pe.png
+│   └── loss_curve_smaller_dim.png
 ├── scripts/
-│ ├── run.sh # Linux/macOS 运行脚本
-│ └── run.bat # Windows 运行脚本
+│   ├── run.sh          # [推荐] Linux/macOS 一键运行所有实验的脚本
+│   └── run.bat         # [推荐] Windows 一键运行所有实验的脚本
 ├── src/
-│ ├── project.py # 核心模型定义与训练代码
-│ └── predict.py # 预测/翻译脚本
-├── README.md # 本说明文件
-└── requirements.txt # Python环境依赖
+│   ├── main_ablation.py  # 核心模型定义与参数化训练代码
+│   ├── run_experiments.py# 驱动所有消融实验的Python启动器
+│   └── predict.py        # 用于加载模型进行翻译预测的脚本
+├── README.md             # 本说明文件
+└── requirements.txt      # Python环境依赖
 ```
-## 环境设置
+> **注意**: `models/` 目录将在第一次运行训练时自动创建，用于存放训练好的 `.pth` 模型文件。
 
-建议使用 Conda 创建虚拟环境，并确保你的机器拥有支持 CUDA 的 NVIDIA GPU。
+## 环境配置与安装
 
-1.  **创建并激活 Conda 环境:**
+### 1. 克隆仓库```bash
+git clone https://github.com/nestful/transformer_homework_en-kn--BJTU.git
+cd transformer_homework_en-kn--BJTU
+```
+
+### 2. 解压数据集
+`data` 文件夹由 `data.zip` 提供。请先解压它。
+```bash
+unzip data.zip
+# 如果没有unzip, 可以手动解压
+```
+
+### 3. 创建Conda环境 (推荐)
+```bash
+# 创建并激活 Conda 环境
+conda create -n transformer_env python=3.10 -y
+conda activate transformer_env
+```
+
+### 4. 安装依赖
+所有需要的库都已在 `requirements.txt` 中列出。
+```bash
+pip install -r requirements.txt
+```
+
+## 如何运行实验
+
+### 方式一：一键运行所有消融实验 (推荐)
+
+为了方便地复现报告中的所有实验结果，请使用 `scripts` 文件夹下的启动脚本。该脚本会自动依次执行基线模型和所有消融实验的训练。
+
+*   **在 Linux / macOS 系统下:**
     ```bash
-    conda create -n transformer_gpu python=3.10 -y
-    conda activate transformer_gpu
+    bash scripts/run.sh
     ```
 
-2.  **安装依赖:**
-    本项目依赖 PyTorch 的特定 GPU 版本。请使用 `pip` 安装 `requirements.txt` 中的所有依赖。
+*   **在 Windows 系统下:**
     ```bash
-    pip install -r requirements.txt
+    .\scripts\run.bat
     ```
-    *注意：`requirements.txt` 中包含了与 CUDA 11.8 兼容的 PyTorch 版本。如果你的 CUDA 版本不同，请访问 [PyTorch官网](https://pytorch.org/get-started/locally/) 获取对应的安装命令。*
+    (或者直接双击 `run.bat` 文件)
 
-## 使用说明
+训练过程中的所有输出（模型文件和损失曲线图）将分别保存在自动创建的 `models/` 和已有的 `results/` 目录下。
 
-### 数据集准备
+### 方式二：手动运行单个实验
 
-请将英语-卡纳达语平行语料库解压后，确保 `train`, `validation`, `test` 三个子文件夹位于项目根目录下的 `data/` 文件夹中。
+如果你只想运行某一个特定的实验（例如，只复现基线模型），可以直接调用 `main_ablation.py` 脚本并传入相应参数。
 
-数据集下载链接：https://huggingface.co/datasets/Helsinki-NLP/opus-100
-
-### 模型训练
-
-要从头开始训练模型，请运行脚本。脚本会自动开始训练，并将最终的模型 (`transformer_en_kn.pth`) 和损失曲线图 (`results/loss_curve.png`)保存在相应的位置。
-
-- **在 Windows 上:**
-  ```bash
-  cd scripts
-  run.bat
-
-- **在 Linux 或 macOS 上:**
-
-  codeBash
-
-  ```
-  chmod +x scripts/run.sh
-  ./scripts/run.sh
-  ```
-
-### 进行翻译
-
-使用 predict.py 脚本来加载已训练好的模型并翻译新的句子。
-
-codeBash
-
-```
-python src/predict.py
+**复现基线模型的精确命令 (含随机种子):**
+```bash
+python src/main_ablation.py --exp_name "baseline" --N 6 --h 8 --d_model 256 --d_ff 512 --epochs 50 --seed 42
 ```
 
-## 复现实验
+你可以通过修改参数来进行其他实验，例如运行一个没有位置编码的实验：```bash
+python src/main_ablation.py --exp_name "no_pe_manual" --no_pe --seed 42
+```
 
-为了精确复现我的实验结果，请使用以下确切的命令行。这里我们设定了随机种子为 42。
+## 使用已训练模型进行预测
 
-- **Windows:** python ..\src\project.py --seed 42
-- **Linux/macOS:** python ../src/project.py --seed 42
+训练完成后，你可以使用 `predict.py` 脚本来加载任意一个已保存的模型，并对新的英文句子进行翻译。
 
-**硬件要求:**
-
-- 训练过程在 NVIDIA GeForce RTX 3060 Laptop GPU 上完成。
-- BATCH_SIZE 设置为 16。
-- 训练 50 个 epoch 大约耗时 5小时。
+**使用示例:**
+```bash
+# 确保 models/transformer_baseline.pth 文件已存在
+python src/predict.py --model_path "models/transformer_baseline.pth" --text "hello world"
+```
 
 ## 实验结果
 
-模型的训练和验证损失曲线如下所示。可以看出，模型在训练集上有效学习，但在验证集上出现了过拟合现象。
-<img width="629" height="399" alt="image" src="https://github.com/user-attachments/assets/2fa42d0b-74d3-4946-bf75-ab218a63e534" />
-
-
+所有实验的训练和验证损失曲线图都保存在 `results/` 文件夹中。关于这些结果的详细定量和定性分析，请参阅本项目的 PDF 实验报告。
