@@ -1,7 +1,5 @@
 @echo off
 
-
-
 echo ======================================================
 echo   Starting All Transformer Ablation Studies...
 echo ======================================================
